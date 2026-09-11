@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Portfolio</title>
+<meta name="description" content="" />
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<div class="scanlines" aria-hidden="true"></div>
+<div class="cursor-blob" id="cursorBlob" aria-hidden="true"></div>
+
+<a class="skip-link" href="#main">Skip to content</a>
+
+<header class="nav">
+  <div class="nav-inner">
+    <a href="#top" class="nav-mark" id="navMark">AR</a>
+    <nav class="nav-links" aria-label="Primary">
+      <a href="#work" data-magnetic>Work</a>
+      <a href="#about" data-magnetic>About</a>
+      <a href="#experience" data-magnetic>Experience</a>
+      <a href="#contact" data-magnetic>Contact</a>
+    </nav>
+    <a class="nav-resume" id="navResume" href="#" data-magnetic>Résumé</a>
+  </div>
+</header>
+
+<main id="main">
+
+  <section class="hero" id="top">
+    <p class="hero-eyebrow" id="heroAvailability"></p>
+    <h1 class="hero-name" id="heroName" aria-label="name"></h1>
+    <p class="hero-role" id="heroRole"></p>
+    <p class="hero-tagline" id="heroTagline"></p>
+    <div class="hero-actions">
+      <a class="btn btn-primary" id="heroResumeBtn" href="#" data-magnetic>Download résumé</a>
+      <a class="btn btn-ghost" id="heroContactBtn" href="#contact" data-magnetic>Say hello</a>
+    </div>
+    <p class="hero-location" id="heroLocation"></p>
+  </section>
+
+  <section class="marquee-wrap" aria-label="Skills">
+    <div class="marquee-track" id="marqueeTrack"></div>
+    <div class="marquee-track" id="marqueeTrack2" aria-hidden="true"></div>
+  </section>
+
+  <section class="about" id="about">
+    <h2 class="section-title">About</h2>
+    <p class="about-text" id="aboutText"></p>
+  </section>
+
+  <section class="work" id="work">
+    <h2 class="section-title">Selected work</h2>
+    <div class="project-grid" id="projectGrid"></div>
+  </section>
+
+  <section class="experience" id="experience">
+    <h2 class="section-title">Experience</h2>
+    <div class="timeline" id="timeline"></div>
+  </section>
+
+</main>
+
+<footer class="contact" id="contact">
+  <h2 class="contact-title">Let's talk</h2>
+  <p class="contact-sub">Have a role, a project, or just want to say hi?</p>
+  <a class="btn btn-big" id="contactEmailBtn" href="#" data-magnetic>Email me</a>
+  <div class="socials" id="socials"></div>
+  <p class="footprint">Built with real spring physics, not just CSS transitions.</p>
+</footer>
+
+<script src="data.js"></script>
+<script src="script.js"></script>
+</body>
+</html>
