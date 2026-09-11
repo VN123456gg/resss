@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Portfolio Builder</title>
+<style>
+  :root{
+    --bg: #F6F6F8; --panel: #FFFFFF; --ink: #16161F; --soft: #6A6A78;
+    --line: #E4E4EA; --accent: #4B3F72; --accent-soft: #EDEAF7;
+    --radius: 12px;
+  }
+  *{ box-sizing: border-box; }
+  html,body{ height: 100%; }
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-size: 14.5px;
+  }
+  .app{ display:grid; grid-template-columns: 440px 1fr; height:100vh; }
+  @media (max-width: 900px){ .app{ grid-template-columns: 1fr; height:auto; } }
+
+  .panel{ overflow-y:auto; padding: 22px 22px 100px; border-right:1px solid var(--line); background:var(--panel); }
+  .preview-col{ display:flex; flex-direction:column; background:#EDEDF2; }
+  .preview-bar{
+    display:flex; align-items:center; justify-content:space-between;
+    padding: 14px 20px; border-bottom:1px solid var(--line); background:var(--panel); gap: 12px; flex-wrap: wrap;
+  }
+  .preview-bar h1{ font-size: 15px; margin:0; font-weight:700; }
+  .preview-bar p{ margin: 2px 0 0; font-size: 12.5px; color: var(--soft); }
+  iframe{ flex:1; width:100%; border:0; background:#fff; }
+
+  h2.section-head{
+    font-size: 12px; text-transform: uppercase; letter-spacing: .06em;
+    color: var(--soft); font-weight:700; margin: 30px 0 12px;
+  }
+  h2.section-head:first-child{ margin-top:0; }
+
+  label{ display:block; font-size:12.5px; font-weight:600; margin: 12px 0 5px; color:#333; }
+  label:first-of-type{ margin-top:0; }
+  input[type=text], input[type=email], input[type=url], textarea{
+    width:100%; padding:9px 11px; border:1.5px solid var(--line); border-radius:8px;
+    font-size:13.5px; font-family:inherit; background:#fff; color:var(--ink);
+  }
+  input:focus, textarea:focus{ outline:2px solid var(--accent); outline-offset:1px; border-color:var(--accent); }
+  textarea{ resize:vertical; min-height:60px; line-height:1.5; }
+  .hint{ font-size:11.5px; color:var(--soft); margin-top:4px; }
+
+  .row2{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+
+  .swatch-grid{ display:grid; grid-template-columns: repeat(auto-fill,minmax(84px,1fr)); gap:10px; }
+  .swatch{
+    border:2px solid var(--line); border-radius:10px; padding:8px; cursor:pointer; background:#fff;
+    text-align:left; font-family:inherit;
+  }
+  .swatch.active{ border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft); }
+  .swatch .dots{ display:flex; gap:4px; margin-bottom:6px; }
+  .swatch .dots i{ width:14px; height:14px; border-radius:50%; display:inline-block; }
+  .swatch span{ font-size:11.5px; font-weight:600; }
+
+  .mode-grid{ display:flex; flex-direction:column; gap:8px; }
+  .mode-card{
+    border:2px solid var(--line); border-radius:10px; padding:11px 13px; cursor:pointer; background:#fff;
+    text-align:left; font-family:inherit;
+  }
+  .mode-card.active{ border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft); }
+  .mode-card b{ display:block; font-size:13px; margin-bottom:2px; }
+  .mode-card span{ font-size:12px; color:var(--soft); }
+
+  .item-card{ border:1.5px solid var(--line); border-radius:10px; padding:12px; margin-bottom:10px; background:#FBFBFD; }
+  .item-card-head{ display:flex; justify-content:space-between; align-items:center; margin-bottom:2px; }
+  .item-card-head span{ font-size:11.5px; font-weight:700; color:var(--soft); }
+  .btn-remove{
+    border:none; background:none; color:#B23B3B; font-size:12px; cursor:pointer; font-weight:600; padding:2px 4px;
+  }
+  .btn-add{
+    width:100%; padding:9px; border:1.5px dashed var(--line); border-radius:8px; background:#fff;
+    color: var(--accent); font-weight:700; font-size:13px; cursor:pointer; margin-top:2px;
+  }
+  .btn-add:hover{ background: var(--accent-soft); }
+
+  .btn-download{
+    display:flex; align-items:center; gap:8px; border:none; border-radius:999px; padding:10px 20px;
+    background: var(--ink); color:#fff; font-weight:700; font-size:13.5px; cursor:pointer;
+    white-space:nowrap;
+  }
+  .btn-download:hover{ background:#000; }
+  .btn-download:disabled{ opacity:.6; cursor:default; }
+
+  .top-actions{ display:flex; gap:8px; margin-bottom: 18px; }
+  .btn-secondary{
+    flex:1; padding:9px; border-radius:8px; border:1.5px solid var(--line); background:#fff;
+    font-weight:600; font-size:12.5px; cursor:pointer; color: var(--ink);
+  }
+  .btn-secondary:hover{ background:#F2F2F5; }
+
+  ::selection{ background: var(--accent-soft); }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <div class="panel" id="panel">
+    <h1 style="font-size:17px;margin:0 0 4px;">Portfolio Builder</h1>
+    <p style="margin:0 0 18px;color:var(--soft);font-size:12.5px;">
+      Fill this in, pick a look, then download a site ready for Vercel.
+    </p>
+
+    <div class="top-actions">
+      <button class="btn-secondary" id="resetBtn" type="button">Reset to example</button>
+    </div>
+
+    <h2 class="section-head">Your info</h2>
+    <label for="f-name">Full name</label>
+    <input type="text" id="f-name" />
+
+    <div class="row2">
+      <div>
+        <label for="f-initials">Nav initials</label>
+        <input type="text" id="f-initials" maxlength="3" />
+      </div>
+      <div>
+        <label for="f-role">Role / title</label>
+        <input type="text" id="f-role" />
+      </div>
+    </div>
+
+    <label for="f-tagline">Tagline</label>
+    <input type="text" id="f-tagline" />
+
+    <label for="f-about">About / bio</label>
+    <textarea id="f-about" rows="4"></textarea>
+
+    <div class="row2">
+      <div>
+        <label for="f-location">Location</label>
+        <input type="text" id="f-location" />
+      </div>
+      <div>
+        <label for="f-availability">Badge text</label>
+        <input type="text" id="f-availability" placeholder="e.g. Open to work" />
+      </div>
+    </div>
+
+    <div class="row2">
+      <div>
+        <label for="f-email">Email</label>
+        <input type="email" id="f-email" />
+      </div>
+      <div>
+        <label for="f-resume">Résumé link</label>
+        <input type="url" id="f-resume" placeholder="https://..." />
+      </div>
+    </div>
+
+    <h2 class="section-head">Colors</h2>
+    <div class="swatch-grid" id="themeGrid"></div>
+
+    <h2 class="section-head">Animation style</h2>
+    <div class="mode-grid" id="modeGrid"></div>
+
+    <h2 class="section-head">Skills / tools</h2>
+    <label for="f-skills">Comma-separated</label>
+    <textarea id="f-skills" rows="3"></textarea>
+
+    <h2 class="section-head">Projects</h2>
+    <div id="projectsList"></div>
+    <button class="btn-add" id="addProject" type="button">+ Add project</button>
+
+    <h2 class="section-head">Experience</h2>
+    <div id="experienceList"></div>
+    <button class="btn-add" id="addExperience" type="button">+ Add role</button>
+
+    <h2 class="section-head">Social links</h2>
+    <div id="socialsList"></div>
+    <button class="btn-add" id="addSocial" type="button">+ Add link</button>
+
+  </div>
+
+  <div class="preview-col">
+    <div class="preview-bar">
+      <div>
+        <h1>Live preview</h1>
+        <p>This is exactly what gets downloaded.</p>
+      </div>
+      <button class="btn-download" id="downloadBtn" type="button">⬇ Download site (.zip)</button>
+    </div>
+    <iframe id="previewFrame" title="Portfolio preview"></iframe>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script>
+/* ============================================================
+   STATIC SITE FILES — these ship unmodified in every download.
+   Only data.js is generated from the form state below.
+   ============================================================ */
+const STATIC_FILES = {
+  "index.html": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"UTF-8\" />\n<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />\n<title>Portfolio</title>\n<meta name=\"description\" content=\"\" />\n\n<link rel=\"preconnect\" href=\"https://fonts.googleapis.com\">\n<link rel=\"preconnect\" href=\"https://fonts.gstatic.com\" crossorigin>\n<link href=\"https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Work+Sans:wght@400;500;600&display=swap\" rel=\"stylesheet\">\n\n<link rel=\"stylesheet\" href=\"style.css\" />\n</head>\n<body>\n\n<div class=\"scanlines\" aria-hidden=\"true\"></div>\n<div class=\"cursor-blob\" id=\"cursorBlob\" aria-hidden=\"true\"></div>\n\n<a class=\"skip-link\" href=\"#main\">Skip to content</a>\n\n<header class=\"nav\">\n  <div class=\"nav-inner\">\n    <a href=\"#top\" class=\"nav-mark\" id=\"navMark\">AR</a>\n    <nav class=\"nav-links\" aria-label=\"Primary\">\n      <a href=\"#work\" data-magnetic>Work</a>\n      <a href=\"#about\" data-magnetic>About</a>\n      <a href=\"#experience\" data-magnetic>Experience</a>\n      <a href=\"#contact\" data-magnetic>Contact</a>\n    </nav>\n    <a class=\"nav-resume\" id=\"navResume\" href=\"#\" data-magnetic>Résumé</a>\n  </div>\n</header>\n\n<main id=\"main\">\n\n  <section class=\"hero\" id=\"top\">\n    <p class=\"hero-eyebrow\" id=\"heroAvailability\"></p>\n    <h1 class=\"hero-name\" id=\"heroName\" aria-label=\"name\"></h1>\n    <p class=\"hero-role\" id=\"heroRole\"></p>\n    <p class=\"hero-tagline\" id=\"heroTagline\"></p>\n    <div class=\"hero-actions\">\n      <a class=\"btn btn-primary\" id=\"heroResumeBtn\" href=\"#\" data-magnetic>Download résumé</a>\n      <a class=\"btn btn-ghost\" id=\"heroContactBtn\" href=\"#contact\" data-magnetic>Say hello</a>\n    </div>\n    <p class=\"hero-location\" id=\"heroLocation\"></p>\n  </section>\n\n  <section class=\"marquee-wrap\" aria-label=\"Skills\">\n    <div class=\"marquee-track\" id=\"marqueeTrack\"></div>\n    <div class=\"marquee-track\" id=\"marqueeTrack2\" aria-hidden=\"true\"></div>\n  </section>\n\n  <section class=\"about\" id=\"about\">\n    <h2 class=\"section-title\">About</h2>\n    <p class=\"about-text\" id=\"aboutText\"></p>\n  </section>\n\n  <section class=\"work\" id=\"work\">\n    <h2 class=\"section-title\">Selected work</h2>\n    <div class=\"project-grid\" id=\"projectGrid\"></div>\n  </section>\n\n  <section class=\"experience\" id=\"experience\">\n    <h2 class=\"section-title\">Experience</h2>\n    <div class=\"timeline\" id=\"timeline\"></div>\n  </section>\n\n</main>\n\n<footer class=\"contact\" id=\"contact\">\n  <h2 class=\"contact-title\">Let's talk</h2>\n  <p class=\"contact-sub\">Have a role, a project, or just want to say hi?</p>\n  <a class=\"btn btn-big\" id=\"contactEmailBtn\" href=\"#\" data-magnetic>Email me</a>\n  <div class=\"socials\" id=\"socials\"></div>\n  <p class=\"footprint\">Built with real spring physics, not just CSS transitions.</p>\n</footer>\n\n<script src=\"data.js\"></script>\n<script src=\"script.js\"></script>\n</body>\n</html>\n",
+  "style.css": "/* ==========================================================\n   TOKENS (defaults — overridden at runtime from data.js theme)\n   ========================================================== */\n:root{\n  --bg: #EEECF6;\n  --surface: #FFFFFF;\n  --ink: #1B1B2F;\n  --ink-soft: #4B4B63;\n  --accent-1: #FF5D5D;\n  --accent-2: #FFC53D;\n  --accent-3: #4B3F72;\n  --line: rgba(27,27,47,0.14);\n  --footer-bg: #4B3F72;\n  --footer-text: #F3F1FB;\n  --cta-text: #14121B;\n\n  --font-display: \"Bricolage Grotesque\", system-ui, sans-serif;\n  --font-body: \"Work Sans\", system-ui, sans-serif;\n\n  --radius-lg: 22px;\n  --shadow-offset: 6px;\n  --ease-spring: cubic-bezier(.34,1.76,.64,1);\n  --ease-smooth: cubic-bezier(.4,.0,.2,1);\n}\n\n*{ box-sizing: border-box; }\nhtml{ scroll-behavior: smooth; }\n\nbody{\n  margin: 0;\n  background: var(--bg);\n  color: var(--ink);\n  font-family: var(--font-body);\n  font-size: 17px;\n  line-height: 1.6;\n  -webkit-font-smoothing: antialiased;\n  overflow-x: hidden;\n  transition: background .3s ease, color .3s ease;\n}\n\n.skip-link{\n  position: absolute; left: -9999px; top: 0;\n  background: var(--ink); color: var(--bg);\n  padding: 10px 16px; z-index: 100;\n}\n.skip-link:focus{ left: 12px; top: 12px; }\na{ color: inherit; }\n:focus-visible{ outline: 3px solid var(--accent-1); outline-offset: 3px; }\n\n.section-title{\n  font-family: var(--font-display);\n  font-weight: 700;\n  font-size: clamp(1.8rem, 3vw, 2.4rem);\n  margin: 0 0 2rem;\n  letter-spacing: -0.01em;\n}\n\n/* ==========================================================\n   SCANLINE OVERLAY (glitch mode only)\n   ========================================================== */\n.scanlines{\n  display: none;\n  position: fixed; inset: 0;\n  z-index: 40;\n  pointer-events: none;\n  background: repeating-linear-gradient(\n    to bottom, rgba(0,0,0,0.06) 0px, rgba(0,0,0,0.06) 1px,\n    transparent 1px, transparent 3px\n  );\n  opacity: 0.5;\n  mix-blend-mode: multiply;\n}\nbody.mode-glitch .scanlines{ display: block; }\n\n/* ==========================================================\n   CURSOR BLOB (kinetic + minimal modes only)\n   ========================================================== */\n.cursor-blob{\n  position: fixed; top: 0; left: 0;\n  width: 26px; height: 26px; margin: -13px 0 0 -13px;\n  border-radius: 50%;\n  background: var(--accent-1);\n  mix-blend-mode: multiply;\n  pointer-events: none;\n  z-index: 9999;\n  opacity: 0;\n  transition: opacity .2s ease, width .2s ease, height .2s ease, margin .2s ease;\n  will-change: transform;\n  display: none;\n}\nbody.mode-kinetic .cursor-blob,\nbody.mode-minimal .cursor-blob{ display: block; }\n.cursor-blob.active{ opacity: 0.85; }\nbody.mode-minimal .cursor-blob.active{ opacity: 0.5; width: 16px; height: 16px; margin: -8px 0 0 -8px; }\n.cursor-blob.grow{ width: 56px; height: 56px; margin: -28px 0 0 -28px; opacity: 0.5; }\n@media (hover:none), (pointer:coarse){ .cursor-blob{ display:none !important; } }\n\n/* ==========================================================\n   NAV\n   ========================================================== */\n.nav{\n  position: sticky; top: 0; z-index: 50;\n  background: color-mix(in srgb, var(--bg) 88%, transparent);\n  backdrop-filter: blur(8px);\n  border-bottom: 1px solid var(--line);\n}\n.nav-inner{\n  max-width: 1120px; margin: 0 auto; padding: 16px 28px;\n  display: flex; align-items: center; justify-content: space-between; gap: 24px;\n}\n.nav-mark{\n  font-family: var(--font-display); font-weight: 700; font-size: 1.15rem;\n  text-decoration: none; width: 42px; height: 42px; border-radius: 50%;\n  background: var(--ink); color: var(--bg);\n  display: flex; align-items: center; justify-content: center; flex-shrink: 0;\n}\n.nav-links{ display: flex; gap: clamp(14px, 3vw, 32px); font-size: 0.95rem; font-weight: 500; }\n.nav-links a{ text-decoration: none; position: relative; padding: 4px 2px; display: inline-block; }\n.nav-links a::after{\n  content: \"\"; position: absolute; left: 0; bottom: -2px; height: 2px; width: 100%;\n  background: var(--accent-1); transform: scaleX(0); transform-origin: left;\n  transition: transform .45s var(--ease-spring);\n}\nbody.mode-cinematic .nav-links a::after,\nbody.mode-minimal .nav-links a::after{ transition: transform .3s var(--ease-smooth); }\n.nav-links a:hover::after, .nav-links a:focus-visible::after{ transform: scaleX(1); }\n.nav-resume{\n  text-decoration: none; font-weight: 600; font-size: 0.9rem;\n  padding: 9px 18px; border-radius: 999px; border: 2px solid var(--ink); white-space: nowrap;\n}\n\n/* ==========================================================\n   HERO\n   ========================================================== */\n.hero{ max-width: 1120px; margin: 0 auto; padding: clamp(48px, 9vw, 96px) 28px clamp(56px, 8vw, 88px); }\n.hero-eyebrow{\n  display: inline-block; font-size: 0.85rem; font-weight: 600; color: var(--ink);\n  border: 2px solid var(--accent-2); padding: 5px 14px; border-radius: 999px; margin: 0 0 22px;\n}\n.hero-eyebrow:empty{ display: none; }\n.hero-name{\n  position: relative;\n  font-family: var(--font-display); font-weight: 800;\n  font-size: clamp(3rem, 10vw, 6.4rem); line-height: 0.98; letter-spacing: -0.02em;\n  margin: 0 0 18px; cursor: default; user-select: none;\n}\n.hero-name .letter{ display: inline-block; will-change: transform; }\n.hero-name .space{ display: inline-block; width: 0.28em; }\n\n/* glitch RGB-split effect, triggered by JS toggling .glitching */\nbody.mode-glitch .hero-name.glitching::before,\nbody.mode-glitch .hero-name.glitching::after{\n  content: attr(data-text);\n  position: absolute; left: 0; top: 0; width: 100%;\n  overflow: hidden;\n}\nbody.mode-glitch .hero-name.glitching::before{\n  color: var(--accent-1); transform: translate(3px,0); mix-blend-mode: multiply; opacity: .8;\n  clip-path: inset(10% 0 55% 0);\n}\nbody.mode-glitch .hero-name.glitching::after{\n  color: var(--accent-3); transform: translate(-3px,0); mix-blend-mode: multiply; opacity: .8;\n  clip-path: inset(60% 0 5% 0);\n}\n\n.hero-role{\n  font-family: var(--font-display); font-weight: 600;\n  font-size: clamp(1.2rem, 2.4vw, 1.6rem); color: var(--accent-1); margin: 0 0 14px;\n}\n.hero-tagline{ max-width: 560px; font-size: 1.1rem; color: var(--ink-soft); margin: 0 0 32px; }\n.hero-actions{ display: flex; flex-wrap: wrap; gap: 14px; margin-bottom: 20px; }\n.hero-location{ font-size: 0.9rem; color: var(--ink-soft); }\n\n/* Buttons */\n.btn{\n  display: inline-flex; align-items: center; justify-content: center; text-decoration: none;\n  font-weight: 600; font-family: var(--font-body); border-radius: 999px; padding: 14px 26px;\n  transition: transform .15s var(--ease-spring);\n  will-change: transform;\n}\nbody.mode-cinematic .btn, body.mode-minimal .btn{ transition: transform .2s var(--ease-smooth); }\n.btn-primary{ background: var(--ink); color: var(--bg); }\n.btn-ghost{ background: transparent; color: var(--ink); border: 2px solid var(--ink); }\n.btn-big{ background: var(--accent-1); color: var(--cta-text); font-size: 1.1rem; padding: 18px 38px; margin-bottom: 28px; }\n.btn:active{ transform: scale(0.94); }\nbody.mode-minimal .btn:hover{ transform: scale(1.03); }\nbody.mode-glitch .btn:hover{ animation: btn-jitter .18s steps(2) infinite; }\n@keyframes btn-jitter{ 0%{transform:translate(0,0)} 50%{transform:translate(1px,-1px)} 100%{transform:translate(-1px,1px)} }\n\n/* ==========================================================\n   MARQUEE\n   ========================================================== */\n.marquee-wrap{\n  border-top: 1px solid var(--line); border-bottom: 1px solid var(--line);\n  background: var(--ink); overflow: hidden; padding: 20px 0; display: flex;\n  transform: rotate(-1.2deg) scale(1.02);\n}\nbody.mode-cinematic .marquee-wrap, body.mode-minimal .marquee-wrap{ transform: none; }\n.marquee-track{\n  display: flex; flex-shrink: 0; gap: 44px; padding-right: 44px; white-space: nowrap;\n  font-family: var(--font-display); font-weight: 700; font-size: 1.4rem; color: var(--bg);\n  animation: marquee 26s linear infinite;\n}\nbody.mode-cinematic .marquee-track{ animation-duration: 40s; }\nbody.mode-minimal .marquee-track{ animation-duration: 50s; }\n.marquee-track span{ opacity: 0.9; }\n.marquee-track span::after{ content: \"•\"; margin-left: 44px; color: var(--accent-2); }\n@keyframes marquee{ from{ transform: translateX(0); } to{ transform: translateX(-100%); } }\n@media (prefers-reduced-motion: reduce){ .marquee-track{ animation: none; } .marquee-wrap{ overflow-x: auto; } }\n\n/* ==========================================================\n   ABOUT\n   ========================================================== */\n.about{\n  max-width: 1120px; margin: 0 auto; padding: clamp(56px, 9vw, 96px) 28px;\n  display: grid; grid-template-columns: minmax(0,1fr) minmax(0,2fr); gap: 40px;\n}\n@media (max-width: 720px){ .about{ grid-template-columns: 1fr; } }\n.about-text{ font-size: 1.15rem; color: var(--ink-soft); max-width: 62ch; margin: 0; }\n\n/* ==========================================================\n   WORK / PROJECT CARDS\n   ========================================================== */\n.work{ max-width: 1120px; margin: 0 auto; padding: clamp(20px, 4vw, 40px) 28px clamp(56px, 9vw, 96px); }\n.project-grid{ display: grid; grid-template-columns: repeat(2, 1fr); gap: 28px; }\n@media (max-width: 720px){ .project-grid{ grid-template-columns: 1fr; } }\n\n.project-card{\n  --card-accent: var(--accent-1);\n  position: relative; background: var(--surface); border: 2px solid var(--ink);\n  border-radius: var(--radius-lg); padding: 28px; text-decoration: none; color: var(--ink);\n  display: block;\n  box-shadow: var(--shadow-offset) var(--shadow-offset) 0 0 var(--card-accent);\n  transform: translate(0,0);\n}\n.project-card[data-accent=\"accent1\"]{ --card-accent: var(--accent-1); }\n.project-card[data-accent=\"accent2\"]{ --card-accent: var(--accent-2); }\n.project-card[data-accent=\"accent3\"]{ --card-accent: var(--accent-3); }\n\nbody.mode-cinematic .project-card, body.mode-minimal .project-card{\n  transition: transform .3s var(--ease-smooth), box-shadow .3s var(--ease-smooth);\n}\nbody.mode-cinematic .project-card:hover, body.mode-minimal .project-card:hover{\n  transform: translateY(-6px);\n}\nbody.mode-glitch .project-card{ transition: box-shadow .15s steps(3); }\nbody.mode-glitch .project-card:hover{\n  box-shadow: calc(var(--shadow-offset) + 3px) var(--shadow-offset) 0 0 var(--accent-3),\n              calc(var(--shadow-offset) * -1) calc(var(--shadow-offset) * -1 + var(--shadow-offset)) 0 0 var(--accent-1);\n}\n\n.project-card .tag-row{ display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }\n.project-card .tag{ font-size: 0.78rem; font-weight: 600; padding: 4px 10px; border-radius: 999px; background: var(--bg); border: 1px solid var(--line); }\n.project-card h3{ font-family: var(--font-display); font-size: 1.3rem; margin: 0 0 10px; }\n.project-card p{ margin: 0; color: var(--ink-soft); font-size: 0.98rem; }\n\n/* ==========================================================\n   EXPERIENCE / TIMELINE\n   ========================================================== */\n.experience{ max-width: 880px; margin: 0 auto; padding: clamp(20px, 4vw, 40px) 28px clamp(70px, 10vw, 110px); }\n.timeline{ border-left: 2px solid var(--line); padding-left: 32px; display: flex; flex-direction: column; gap: 34px; }\n.timeline-item{ position: relative; }\n.timeline-item::before{\n  content: \"\"; position: absolute; left: -37.5px; top: 6px; width: 12px; height: 12px;\n  border-radius: 50%; background: var(--accent-1); border: 2px solid var(--bg);\n}\n.timeline-period{ font-size: 0.85rem; font-weight: 600; color: var(--accent-3); margin-bottom: 4px; }\n.timeline-role{ font-family: var(--font-display); font-weight: 700; font-size: 1.2rem; margin: 0 0 2px; }\n.timeline-org{ color: var(--ink-soft); font-weight: 500; margin-bottom: 6px; }\n.timeline-desc{ color: var(--ink-soft); margin: 0; max-width: 60ch; }\n\n/* ==========================================================\n   CONTACT / FOOTER\n   ========================================================== */\n.contact{\n  background: var(--footer-bg); color: var(--footer-text); text-align: center;\n  padding: clamp(64px, 10vw, 110px) 28px;\n  border-top-left-radius: 40px; border-top-right-radius: 40px;\n}\n.contact-title{\n  font-family: var(--font-display); font-weight: 800;\n  font-size: clamp(2.4rem, 6vw, 4rem); margin: 0 0 12px; letter-spacing: -0.01em;\n}\n.contact-sub{ font-size: 1.1rem; opacity: 0.85; margin: 0 0 32px; }\n.socials{ display: flex; justify-content: center; gap: 24px; flex-wrap: wrap; margin: 12px 0 40px; font-weight: 600; }\n.socials a{ text-decoration: none; border-bottom: 2px solid transparent; padding-bottom: 2px; transition: border-color .2s ease; }\n.socials a:hover{ border-color: var(--accent-2); }\n.footprint{ font-size: 0.8rem; opacity: 0.55; margin: 0; }\n\n/* ==========================================================\n   SCROLL REVEAL\n   ========================================================== */\n.reveal{ opacity: 0; transform: scale(0.96) translateY(12px); }\n.reveal.in{ animation: pop-in .6s var(--ease-spring) forwards; }\nbody.mode-cinematic .reveal, body.mode-minimal .reveal{ transform: translateY(18px); }\nbody.mode-cinematic .reveal.in, body.mode-minimal .reveal.in{ animation: fade-in .8s var(--ease-smooth) forwards; }\n@keyframes pop-in{ to{ opacity: 1; transform: scale(1) translateY(0); } }\n@keyframes fade-in{ to{ opacity: 1; transform: translateY(0); } }\n@media (prefers-reduced-motion: reduce){\n  .reveal{ opacity: 1; transform: none; animation: none; }\n  .btn, .project-card, .nav-links a::after{ transition: none; }\n  .scanlines{ display: none !important; }\n}\n",
+  "script.js": "(() => {\n  \"use strict\";\n\n  const d = window.PORTFOLIO_DATA;\n  const reduceMotion = window.matchMedia(\"(prefers-reduced-motion: reduce)\").matches;\n  const isTouch = window.matchMedia(\"(hover: none), (pointer: coarse)\").matches;\n  const MODE = (d.mode || \"kinetic\");\n\n  /* ============================================================\n     1. APPLY THEME (CSS custom properties) + MODE (body class)\n     ============================================================ */\n  const root = document.documentElement.style;\n  const t = d.theme || {};\n  const setVar = (name, val) => { if (val) root.setProperty(name, val); };\n  setVar(\"--bg\", t.bg); setVar(\"--surface\", t.surface);\n  setVar(\"--ink\", t.ink); setVar(\"--ink-soft\", t.inkSoft);\n  setVar(\"--accent-1\", t.accent1); setVar(\"--accent-2\", t.accent2); setVar(\"--accent-3\", t.accent3);\n  setVar(\"--line\", t.line); setVar(\"--footer-bg\", t.footerBg); setVar(\"--footer-text\", t.footerText);\n  setVar(\"--cta-text\", t.ctaText);\n\n  document.body.classList.add(\"mode-\" + MODE);\n\n  /* ============================================================\n     2. POPULATE CONTENT FROM data.js\n     ============================================================ */\n  document.title = d.meta.title;\n  const metaDesc = document.querySelector('meta[name=\"description\"]');\n  if (metaDesc) metaDesc.setAttribute(\"content\", d.meta.description);\n\n  document.getElementById(\"navMark\").textContent = d.person.initials;\n  document.getElementById(\"navResume\").href = d.person.resumeUrl || \"#\";\n  document.getElementById(\"heroResumeBtn\").href = d.person.resumeUrl || \"#\";\n  document.getElementById(\"heroRole\").textContent = d.person.role;\n  document.getElementById(\"heroTagline\").textContent = d.person.tagline;\n  document.getElementById(\"heroLocation\").textContent = d.person.location;\n  document.getElementById(\"heroAvailability\").textContent = d.person.availability || \"\";\n  document.getElementById(\"contactEmailBtn\").href = \"mailto:\" + (d.person.email || \"\");\n  document.getElementById(\"aboutText\").textContent = (d.about || \"\").trim().replace(/\\s+/g, \" \");\n\n  const heroNameEl = document.getElementById(\"heroName\");\n  heroNameEl.setAttribute(\"aria-label\", d.person.name);\n  heroNameEl.setAttribute(\"data-text\", d.person.name);\n  heroNameEl.innerHTML = \"\";\n  const letterEls = [];\n  (d.person.name || \"\").split(\"\").forEach((ch) => {\n    if (ch === \" \") {\n      const s = document.createElement(\"span\");\n      s.className = \"space\";\n      heroNameEl.appendChild(s);\n    } else {\n      const s = document.createElement(\"span\");\n      s.className = \"letter\";\n      s.textContent = ch;\n      heroNameEl.appendChild(s);\n      letterEls.push(s);\n    }\n  });\n\n  function buildMarquee(el) {\n    el.innerHTML = \"\";\n    (d.skills || []).forEach((skill) => {\n      const span = document.createElement(\"span\");\n      span.textContent = skill;\n      el.appendChild(span);\n    });\n  }\n  buildMarquee(document.getElementById(\"marqueeTrack\"));\n  buildMarquee(document.getElementById(\"marqueeTrack2\"));\n\n  const projectGrid = document.getElementById(\"projectGrid\");\n  (d.projects || []).forEach((p) => {\n    const a = document.createElement(\"a\");\n    a.className = \"project-card reveal\";\n    a.href = p.link || \"#\";\n    a.dataset.accent = p.accent || \"accent1\";\n    const tagRow = document.createElement(\"div\");\n    tagRow.className = \"tag-row\";\n    (p.tags || []).forEach((tg) => {\n      const span = document.createElement(\"span\");\n      span.className = \"tag\";\n      span.textContent = tg;\n      tagRow.appendChild(span);\n    });\n    const h3 = document.createElement(\"h3\");\n    h3.textContent = p.title;\n    const desc = document.createElement(\"p\");\n    desc.textContent = p.description;\n    a.appendChild(tagRow); a.appendChild(h3); a.appendChild(desc);\n    projectGrid.appendChild(a);\n  });\n\n  const timeline = document.getElementById(\"timeline\");\n  (d.experience || []).forEach((e) => {\n    const item = document.createElement(\"div\");\n    item.className = \"timeline-item reveal\";\n    const period = document.createElement(\"div\");\n    period.className = \"timeline-period\"; period.textContent = e.period;\n    const role = document.createElement(\"div\");\n    role.className = \"timeline-role\"; role.textContent = e.role;\n    const org = document.createElement(\"div\");\n    org.className = \"timeline-org\"; org.textContent = e.org;\n    const desc = document.createElement(\"p\");\n    desc.className = \"timeline-desc\"; desc.textContent = e.description;\n    item.appendChild(period); item.appendChild(role); item.appendChild(org); item.appendChild(desc);\n    timeline.appendChild(item);\n  });\n\n  const socials = document.getElementById(\"socials\");\n  (d.socials || []).forEach((s) => {\n    if (!s.url) return;\n    const a = document.createElement(\"a\");\n    a.href = s.url; a.textContent = s.label;\n    socials.appendChild(a);\n  });\n\n  /* ============================================================\n     3. SCROLL REVEAL\n     ============================================================ */\n  if (!reduceMotion) {\n    const io = new IntersectionObserver((entries) => {\n      entries.forEach((entry) => {\n        if (entry.isIntersecting) { entry.target.classList.add(\"in\"); io.unobserve(entry.target); }\n      });\n    }, { threshold: 0.15 });\n    document.querySelectorAll(\".reveal\").forEach((el) => io.observe(el));\n  } else {\n    document.querySelectorAll(\".reveal\").forEach((el) => el.classList.add(\"in\"));\n  }\n\n  if (reduceMotion) return;\n\n  /* ============================================================\n     4. GLITCH MODE — periodic RGB-split flicker + hover jitter\n        (works fine on touch too, no pointer needed)\n     ============================================================ */\n  if (MODE === \"glitch\") {\n    const nameEl = heroNameEl;\n    function burst() {\n      nameEl.classList.add(\"glitching\");\n      setTimeout(() => nameEl.classList.remove(\"glitching\"), 140 + Math.random() * 120);\n      setTimeout(burst, 2200 + Math.random() * 2600);\n    }\n    setTimeout(burst, 900);\n  }\n\n  if (isTouch) return; // everything below is pointer/cursor driven\n\n  let mouseX = window.innerWidth / 2;\n  let mouseY = window.innerHeight / 2;\n  window.addEventListener(\"mousemove\", (e) => { mouseX = e.clientX; mouseY = e.clientY; });\n\n  /* ============================================================\n     5. SPRING ENGINE (used by kinetic + minimal modes)\n     ============================================================ */\n  class Spring {\n    constructor(stiffness = 0.12, damping = 0.72) {\n      this.value = 0; this.target = 0; this.velocity = 0;\n      this.stiffness = stiffness; this.damping = damping;\n    }\n    update() {\n      const force = (this.target - this.value) * this.stiffness;\n      this.velocity = (this.velocity + force) * this.damping;\n      this.value += this.velocity;\n      return this.value;\n    }\n  }\n\n  if (MODE === \"kinetic\" || MODE === \"minimal\") {\n    const amp = MODE === \"kinetic\" ? 1 : 0.35; // minimal = subtler motion\n\n    const blob = document.getElementById(\"cursorBlob\");\n    const blobX = new Spring(0.16, 0.78);\n    const blobY = new Spring(0.16, 0.78);\n    blobX.value = blobX.target = mouseX;\n    blobY.value = blobY.target = mouseY;\n    let blobShown = false;\n    window.addEventListener(\"mousemove\", () => {\n      if (!blobShown) { blob.classList.add(\"active\"); blobShown = true; }\n    });\n    document.querySelectorAll(\"a, button, [data-magnetic]\").forEach((el) => {\n      el.addEventListener(\"mouseenter\", () => blob.classList.add(\"grow\"));\n      el.addEventListener(\"mouseleave\", () => blob.classList.remove(\"grow\"));\n    });\n\n    // Hero letters repel from cursor (disabled in minimal mode — amp 0 => no motion)\n    const letterSprings = letterEls.map((el) => ({ x: new Spring(0.18, 0.72), y: new Spring(0.18, 0.72), el }));\n    const REPEL_RADIUS = 90;\n    const REPEL_STRENGTH = 26 * (MODE === \"kinetic\" ? 1 : 0); // off for minimal\n\n    function updateHeroLetters() {\n      letterSprings.forEach(({ x, y, el }) => {\n        const rect = el.getBoundingClientRect();\n        const cx = rect.left + rect.width / 2, cy = rect.top + rect.height / 2;\n        const dx = cx - mouseX, dy = cy - mouseY;\n        const dist = Math.hypot(dx, dy);\n        if (dist < REPEL_RADIUS && REPEL_STRENGTH > 0) {\n          const pull = (1 - dist / REPEL_RADIUS) * REPEL_STRENGTH;\n          const angle = Math.atan2(dy, dx);\n          x.target = Math.cos(angle) * pull; y.target = Math.sin(angle) * pull;\n        } else { x.target = 0; y.target = 0; }\n        const vx = x.update(), vy = y.update();\n        if (Math.abs(vx) > 0.01 || Math.abs(vy) > 0.01) el.style.transform = `translate(${vx.toFixed(2)}px, ${vy.toFixed(2)}px)`;\n      });\n    }\n\n    if (MODE === \"kinetic\") {\n      const magneticEls = Array.from(document.querySelectorAll(\"[data-magnetic]\"));\n      const MAGNETIC_STRENGTH = 0.35;\n      magneticEls.forEach((el) => {\n        el.style.willChange = \"transform\";\n        el.addEventListener(\"mousemove\", (e) => {\n          const rect = el.getBoundingClientRect();\n          const relX = e.clientX - (rect.left + rect.width / 2);\n          const relY = e.clientY - (rect.top + rect.height / 2);\n          el.style.transform = `translate(${relX * MAGNETIC_STRENGTH}px, ${relY * MAGNETIC_STRENGTH}px)`;\n        });\n        el.addEventListener(\"mouseleave\", () => {\n          el.style.transition = \"transform .5s cubic-bezier(.34,1.76,.64,1)\";\n          el.style.transform = \"translate(0,0)\";\n          setTimeout(() => { el.style.transition = \"\"; }, 500);\n        });\n        el.addEventListener(\"mouseenter\", () => { el.style.transition = \"\"; });\n      });\n\n      document.querySelectorAll(\".project-card\").forEach((card) => {\n        card.addEventListener(\"mousemove\", (e) => {\n          const rect = card.getBoundingClientRect();\n          const px = (e.clientX - rect.left) / rect.width - 0.5;\n          const py = (e.clientY - rect.top) / rect.height - 0.5;\n          card.style.transform = `translate(${px * 8}px, ${py * 8}px) rotate(${px * 2}deg)`;\n        });\n        card.addEventListener(\"mouseleave\", () => {\n          card.style.transition = \"transform .45s cubic-bezier(.34,1.76,.64,1)\";\n          card.style.transform = \"translate(0,0) rotate(0deg)\";\n          setTimeout(() => { card.style.transition = \"\"; }, 450);\n        });\n        card.addEventListener(\"mouseenter\", () => { card.style.transition = \"\"; });\n      });\n    }\n\n    function loop() {\n      const bx = blobX.update(), by = blobY.update();\n      blobX.target = mouseX; blobY.target = mouseY;\n      blob.style.transform = `translate(${bx}px, ${by}px)`;\n      updateHeroLetters();\n      requestAnimationFrame(loop);\n    }\n    requestAnimationFrame(loop);\n  }\n\n  /* ============================================================\n     6. CINEMATIC MODE — smooth scroll-linked hero parallax\n     ============================================================ */\n  if (MODE === \"cinematic\") {\n    const hero = document.querySelector(\".hero\");\n    const nav = document.querySelector(\".nav\");\n    function onScroll() {\n      const y = window.scrollY;\n      const fade = Math.max(0, 1 - y / 520);\n      hero.style.transform = `translateY(${y * 0.25}px)`;\n      hero.style.opacity = fade.toFixed(3);\n      nav.style.boxShadow = y > 12 ? \"0 8px 24px rgba(0,0,0,0.08)\" : \"none\";\n    }\n    window.addEventListener(\"scroll\", onScroll, { passive: true });\n    onScroll();\n  }\n})();\n",
+  "README.md": "# My portfolio\n\nGenerated with the Portfolio Builder. This is a static site — no build\nstep, no framework, ready to deploy as-is.\n\n## Edit it later\n\nEverything you typed (and your color/animation choices) lives in\n**`data.js`**. Open it in any text editor to tweak content without\nregenerating the whole site. `index.html`, `style.css`, and `script.js`\nare the shared engine — you generally won't need to touch them.\n\n## Preview locally\n\n```bash\nnpx serve .\n# or\npython3 -m http.server 8000\n```\n\n## Deploy to Vercel\n\n**Dashboard:** push this folder to a GitHub repo → [vercel.com/new](https://vercel.com/new)\n→ import the repo → framework preset **\"Other\"** (no build command needed) → Deploy.\n\n**CLI:**\n```bash\nnpm i -g vercel\ncd this-folder\nvercel\n```\n",
+  "vercel.json": "{\n  \"cleanUrls\": true,\n  \"trailingSlash\": false\n}\n"
+};
+
+/* ============================================================
+   THEMES
+   ============================================================ */
+const THEMES = [
+  { id:"coral",   name:"Coral Pop",    bg:"#EEECF6", surface:"#FFFFFF", ink:"#1B1B2F", inkSoft:"#4B4B63",
+    accent1:"#FF5D5D", accent2:"#FFC53D", accent3:"#4B3F72", line:"rgba(27,27,47,0.14)",
+    footerBg:"#4B3F72", footerText:"#F3F1FB", ctaText:"#14121B" },
+  { id:"midnight", name:"Midnight Neon", bg:"#101014", surface:"#17171D", ink:"#F5F5F0", inkSoft:"#A9A9B8",
+    accent1:"#B6FF3C", accent2:"#FF3CAC", accent3:"#3CE7FF", line:"rgba(245,245,240,0.14)",
+    footerBg:"#1B1B22", footerText:"#F5F5F0", ctaText:"#101014" },
+  { id:"sunset",  name:"Sunset Warm",  bg:"#FBE9DD", surface:"#FFFFFF", ink:"#2B1E17", inkSoft:"#6B5346",
+    accent1:"#FF7A45", accent2:"#FFB238", accent3:"#1F6F6B", line:"rgba(43,30,23,0.14)",
+    footerBg:"#1F6F6B", footerText:"#FDF6EF", ctaText:"#14121B" },
+  { id:"mint",    name:"Mint Fresh",   bg:"#E3F5EC", surface:"#FFFFFF", ink:"#10281F", inkSoft:"#4E6F60",
+    accent1:"#FF3D81", accent2:"#FFD23F", accent3:"#0B7A5A", line:"rgba(16,40,31,0.14)",
+    footerBg:"#0B7A5A", footerText:"#F1FBF6", ctaText:"#14121B" },
+  { id:"ocean",   name:"Ocean Blue",   bg:"#E6F0FB", surface:"#FFFFFF", ink:"#0B2545", inkSoft:"#4E6C8C",
+    accent1:"#FF6B5B", accent2:"#FFC93C", accent3:"#124E78", line:"rgba(11,37,69,0.14)",
+    footerBg:"#124E78", footerText:"#EAF3FC", ctaText:"#14121B" },
+];
+
+const MODES = [
+  { id:"kinetic",   name:"Playful & kinetic",  desc:"Cursor-reactive letters, magnetic buttons, tilting cards." },
+  { id:"cinematic", name:"Smooth & cinematic",  desc:"Scroll-driven parallax hero, gentle fades." },
+  { id:"glitch",    name:"Experimental & glitchy", desc:"RGB-split flicker, scanlines, jittery hovers." },
+  { id:"minimal",   name:"Minimal & precise",   desc:"Subtle spring cursor, restrained hover-only motion." },
+];
+
+/* ============================================================
+   STATE
+   ============================================================ */
+function sampleState(){
+  return {
+    theme: "coral",
+    mode: "kinetic",
+    person: {
+      name: "Alex Rivera", initials: "AR", role: "Product Designer",
+      tagline: "I design and build interfaces that feel as good as they look.",
+      location: "Based in Austin, TX — open to remote work",
+      email: "hello@alexrivera.design", resumeUrl: "", availability: "Open to new roles",
+    },
+    about: "I'm a product designer with six years of experience turning fuzzy problems into interfaces people actually enjoy using. I care most about the details nobody asks for — the ones you only notice when they're missing.",
+    skills: ["Product Design","Design Systems","Prototyping","Figma","User Research","Motion Design"],
+    projects: [
+      { title:"Northwind — Banking App Redesign", description:"Rebuilt core banking flows for a 2M-user fintech app, cutting onboarding drop-off by 34%.", tags:"Product Design, Design System", accent:"accent1", link:"" },
+      { title:"Fernweh — Travel Planning Tool", description:"A side project turned 40k-user app for building trip itineraries with friends.", tags:"0→1, Mobile", accent:"accent2", link:"" },
+    ],
+    experience: [
+      { period:"2023 — Present", role:"Senior Product Designer", org:"Northwind Financial", description:"Leading design for core banking products used by 2M+ customers." },
+      { period:"2021 — 2023", role:"Product Designer", org:"Fernweh (startup)", description:"Third design hire. Built the product from prototype to 40k users." },
+    ],
+    socials: [
+      { label:"Email", url:"mailto:hello@alexrivera.design" },
+      { label:"LinkedIn", url:"" },
+    ],
+  };
+}
+
+let state = sampleState();
+
+/* ============================================================
+   FORM <-> STATE BINDING (fixed fields)
+   ============================================================ */
+const fieldMap = {
+  "f-name": ["person","name"], "f-initials": ["person","initials"], "f-role": ["person","role"],
+  "f-tagline": ["person","tagline"], "f-location": ["person","location"],
+  "f-availability": ["person","availability"], "f-email": ["person","email"], "f-resume": ["person","resumeUrl"],
+};
+function bindSimpleFields(){
+  Object.entries(fieldMap).forEach(([id, path]) => {
+    const el = document.getElementById(id);
+    el.value = state[path[0]][path[1]];
+    el.addEventListener("input", () => { state[path[0]][path[1]] = el.value; scheduleUpdate(); });
+  });
+  const about = document.getElementById("f-about");
+  about.value = state.about;
+  about.addEventListener("input", () => { state.about = about.value; scheduleUpdate(); });
+
+  const skills = document.getElementById("f-skills");
+  skills.value = state.skills.join(", ");
+  skills.addEventListener("input", () => {
+    state.skills = skills.value.split(",").map(s=>s.trim()).filter(Boolean);
+    scheduleUpdate();
+  });
+}
+
+function renderThemeGrid(){
+  const grid = document.getElementById("themeGrid");
+  grid.innerHTML = "";
+  THEMES.forEach(theme => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "swatch" + (state.theme === theme.id ? " active" : "");
+    btn.innerHTML = `<div class="dots">
+        <i style="background:${theme.bg};border:1px solid #0002"></i>
+        <i style="background:${theme.accent1}"></i>
+        <i style="background:${theme.accent2}"></i>
+        <i style="background:${theme.accent3}"></i>
+      </div><span>${theme.name}</span>`;
+    btn.addEventListener("click", () => { state.theme = theme.id; renderThemeGrid(); scheduleUpdate(); });
+    grid.appendChild(btn);
+  });
+}
+
+function renderModeGrid(){
+  const grid = document.getElementById("modeGrid");
+  grid.innerHTML = "";
+  MODES.forEach(mode => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "mode-card" + (state.mode === mode.id ? " active" : "");
+    btn.innerHTML = `<b>${mode.name}</b><span>${mode.desc}</span>`;
+    btn.addEventListener("click", () => { state.mode = mode.id; renderModeGrid(); scheduleUpdate(); });
+    grid.appendChild(btn);
+  });
+}
+
+/* ============================================================
+   DYNAMIC LISTS: projects / experience / socials
+   ============================================================ */
+function renderProjects(){
+  const wrap = document.getElementById("projectsList");
+  wrap.innerHTML = "";
+  state.projects.forEach((p, i) => {
+    const card = document.createElement("div");
+    card.className = "item-card";
+    card.innerHTML = `
+      <div class="item-card-head"><span>Project ${i+1}</span><button class="btn-remove" type="button">Remove</button></div>
+      <label>Title</label><input type="text" data-f="title" value="${escAttr(p.title)}">
+      <label>Description</label><textarea rows="2" data-f="description">${escHtml(p.description)}</textarea>
+      <label>Tags (comma-separated)</label><input type="text" data-f="tags" value="${escAttr(p.tags)}">
+      <label>Link</label><input type="url" data-f="link" placeholder="https://..." value="${escAttr(p.link)}">
+      <label>Accent color</label>
+      <select data-f="accent" style="width:100%;padding:8px;border:1.5px solid var(--line);border-radius:8px;">
+        <option value="accent1" ${p.accent==="accent1"?"selected":""}>Accent A</option>
+        <option value="accent2" ${p.accent==="accent2"?"selected":""}>Accent B</option>
+        <option value="accent3" ${p.accent==="accent3"?"selected":""}>Accent C</option>
+      </select>
+    `;
+    card.querySelector(".btn-remove").addEventListener("click", () => {
+      state.projects.splice(i,1); renderProjects(); scheduleUpdate();
+    });
+    card.querySelectorAll("[data-f]").forEach(el => {
+      el.addEventListener("input", () => { p[el.dataset.f] = el.value; scheduleUpdate(); });
+    });
+    wrap.appendChild(card);
+  });
+}
+
+function renderExperience(){
+  const wrap = document.getElementById("experienceList");
+  wrap.innerHTML = "";
+  state.experience.forEach((e, i) => {
+    const card = document.createElement("div");
+    card.className = "item-card";
+    card.innerHTML = `
+      <div class="item-card-head"><span>Role ${i+1}</span><button class="btn-remove" type="button">Remove</button></div>
+      <label>Period</label><input type="text" data-f="period" placeholder="2023 — Present" value="${escAttr(e.period)}">
+      <label>Role / title</label><input type="text" data-f="role" value="${escAttr(e.role)}">
+      <label>Organization</label><input type="text" data-f="org" value="${escAttr(e.org)}">
+      <label>Description</label><textarea rows="2" data-f="description">${escHtml(e.description)}</textarea>
+    `;
+    card.querySelector(".btn-remove").addEventListener("click", () => {
+      state.experience.splice(i,1); renderExperience(); scheduleUpdate();
+    });
+    card.querySelectorAll("[data-f]").forEach(el => {
+      el.addEventListener("input", () => { e[el.dataset.f] = el.value; scheduleUpdate(); });
+    });
+    wrap.appendChild(card);
+  });
+}
+
+function renderSocials(){
+  const wrap = document.getElementById("socialsList");
+  wrap.innerHTML = "";
+  state.socials.forEach((s, i) => {
+    const card = document.createElement("div");
+    card.className = "item-card";
+    card.innerHTML = `
+      <div class="item-card-head"><span>Link ${i+1}</span><button class="btn-remove" type="button">Remove</button></div>
+      <label>Label</label><input type="text" data-f="label" value="${escAttr(s.label)}">
+      <label>URL</label><input type="url" data-f="url" placeholder="https:// or mailto:" value="${escAttr(s.url)}">
+    `;
+    card.querySelector(".btn-remove").addEventListener("click", () => {
+      state.socials.splice(i,1); renderSocials(); scheduleUpdate();
+    });
+    card.querySelectorAll("[data-f]").forEach(el => {
+      el.addEventListener("input", () => { s[el.dataset.f] = el.value; scheduleUpdate(); });
+    });
+    wrap.appendChild(card);
+  });
+}
+
+function escAttr(str){ return (str||"").replace(/&/g,"&amp;").replace(/"/g,"&quot;"); }
+function escHtml(str){ return (str||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+
+document.getElementById("addProject").addEventListener("click", () => {
+  state.projects.push({ title:"New project", description:"", tags:"", accent:"accent1", link:"" });
+  renderProjects(); scheduleUpdate();
+});
+document.getElementById("addExperience").addEventListener("click", () => {
+  state.experience.push({ period:"", role:"", org:"", description:"" });
+  renderExperience(); scheduleUpdate();
+});
+document.getElementById("addSocial").addEventListener("click", () => {
+  state.socials.push({ label:"", url:"" });
+  renderSocials(); scheduleUpdate();
+});
+document.getElementById("resetBtn").addEventListener("click", () => {
+  state = sampleState();
+  bindSimpleFields(); renderThemeGrid(); renderModeGrid();
+  renderProjects(); renderExperience(); renderSocials();
+  scheduleUpdate();
+});
+
+/* ============================================================
+   BUILD PORTFOLIO_DATA + data.js from state
+   ============================================================ */
+function buildPortfolioData(){
+  const theme = THEMES.find(t => t.id === state.theme) || THEMES[0];
+  return {
+    meta: { title: (state.person.name || "Portfolio") + " — " + (state.person.role || ""), description: state.person.tagline || "" },
+    theme, mode: state.mode,
+    person: state.person,
+    about: state.about,
+    skills: state.skills,
+    projects: state.projects.map(p => ({
+      title: p.title, description: p.description,
+      tags: (p.tags||"").split(",").map(s=>s.trim()).filter(Boolean),
+      accent: p.accent, link: p.link,
+    })),
+    experience: state.experience,
+    socials: state.socials,
+  };
+}
+function generateDataJs(){
+  return "const PORTFOLIO_DATA = " + JSON.stringify(buildPortfolioData(), null, 2) + ";\n";
+}
+
+/* ============================================================
+   LIVE PREVIEW (merged single document in an iframe)
+   ============================================================ */
+const previewFrame = document.getElementById("previewFrame");
+function updatePreview(){
+  const dataJs = generateDataJs();
+  let html = STATIC_FILES["index.html"];
+  html = html.replace('<link rel="stylesheet" href="style.css" />', "<style>\n" + STATIC_FILES["style.css"] + "\n</style>");
+  html = html.replace(
+    '<script src="data.js"></script>\n<script src="script.js"></script>',
+    "<script>\n" + dataJs + "\n</script>\n<script>\n" + STATIC_FILES["script.js"] + "\n</script>"
+  );
+  previewFrame.srcdoc = html;
+}
+let updateTimer = null;
+function scheduleUpdate(){
+  clearTimeout(updateTimer);
+  updateTimer = setTimeout(updatePreview, 250);
+}
+
+/* ============================================================
+   DOWNLOAD ZIP
+   ============================================================ */
+document.getElementById("downloadBtn").addEventListener("click", async () => {
+  const btn = document.getElementById("downloadBtn");
+  btn.disabled = true; btn.textContent = "Zipping…";
+  try{
+    const zip = new JSZip();
+    zip.file("index.html", STATIC_FILES["index.html"]);
+    zip.file("style.css", STATIC_FILES["style.css"]);
+    zip.file("script.js", STATIC_FILES["script.js"]);
+    zip.file("data.js", generateDataJs());
+    zip.file("README.md", STATIC_FILES["README.md"]);
+    zip.file("vercel.json", STATIC_FILES["vercel.json"]);
+    const blob = await zip.generateAsync({ type: "blob" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    const filenameSafe = (state.person.name || "portfolio").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,"");
+    a.href = url; a.download = (filenameSafe || "portfolio") + "-site.zip";
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+  } finally {
+    btn.disabled = false; btn.textContent = "⬇ Download site (.zip)";
+  }
+});
+
+/* ============================================================
+   INIT
+   ============================================================ */
+bindSimpleFields();
+renderThemeGrid();
+renderModeGrid();
+renderProjects();
+renderExperience();
+renderSocials();
+updatePreview();
+</script>
+</body>
+</html>
